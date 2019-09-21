@@ -15,5 +15,8 @@ class Dataset(models.Model):
     spend = models.FloatField(null=True, blank=True)
     revenue = models.FloatField(null=True, blank=True)
 
+    class Meta:
+        ordering = ["id", "date", "channel", "country", "os", "impressions", "clicks", "installs", "spend", "revenue"]
+
     def __str__(self):
         return self.channel
