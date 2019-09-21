@@ -1,11 +1,11 @@
 # Simple Django-Restfull 
 Implementation for a single HTTP endpoint which is capable of filtering, grouping and sorting. 
 
-# Compilation
+# Installation
 	- Open your terminal.
 	- Clone the repo.
 	- Import the attached sql file to the simple-dataset DB created "Instead of run migrations".
-	- Postman collection is also attached in the repo tho check test cases.
+	- Postman collection "https://www.getpostman.com/collections/f1b00184c3c245f581f5" is also you can import to check test cases samples.
 
 # Conclusion
 A simple app in python3 and django connect to Mysql DB.
@@ -14,3 +14,11 @@ A simple app in python3 and django connect to Mysql DB.
 	- Python 3.6
 	- Django 2.2.5
 	- Mysql
+
+# Table of enhancements
+	- Dockerize the project "This was out of our scope"
+	- Authentization through requests "This was out of our scope"
+	- Adding more functionality "This was out of our scope"
+	- Using django-filters more than used
+	- Apply more secuity checks 
+	- Apply some middlewares, decorators and other layers for security or functionality "This was out of our scope"
