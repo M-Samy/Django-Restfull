@@ -31,7 +31,9 @@ class Dataset(APIView):
             data_serializer = DataSerializer()
             self.handle_returned_fields(returned_fields, dataset, data_serializer)
             dataset = self.get_data_within_a_daterange(from_date, to_date, dataset)
+
             dataset = self.get_data_ordered(order_field, order_type, dataset)
+
             result_page = paginator.paginate_queryset(dataset, request)
             serializer = DataSerializer(result_page, many=True)
             return paginator.get_paginated_response(serializer.data)
@@ -52,21 +54,27 @@ class Dataset(APIView):
     def get_data_ordered(self, order_field, order_type, data):
         try:
             model_fields = DatasetModel._meta.ordering
-            if order_field and order_field in model_fields:
-                data = data.order_by(order_field)
 
-            if order_type.upper() == "DESC":
-                order_field = "-" + order_field
+            if (order_field) and (order_field in model_fields):
+                if order_type.upper() == "DESC":
+                    order_field = "-" + order_field
+                data = data.order_by(order_field)
 
             return data
         except Exception as e:
             raise Http404('Failed ordering data by {} due to {}'.format(order_field, e.__repr__))
 
     def handle_returned_fields(self, returned_fields, data, serializer):
-        model_fields = DatasetModel._meta.ordering
-        fields_list = [field.strip() for field in returned_fields.split(',')]
-        # Check if all returned fields client send is a real fields in Dataset Model.
-        if all(elem.strip() in model_fields for elem in fields_list):
-            serializer.Meta.fields = fields_list
-        else:
-            pass
+        try:
+            model_fields = DatasetModel._meta.ordering
+            if returned_fields:
+                fields_list = [field.strip() for field in returned_fields.split(',')]
+            else:
+                fields_list = "__all__"
+            # Check if all returned fields client send is a real fields in Dataset Model.
+            if all(elem.strip() in model_fields for elem in fields_list):
+                serializer.Meta.fields = fields_list
+            else:
+                pass
+        except Exception as e:
+            raise Http404('Failed to get fields client want to back in response due to {}'.format(e.__doc__))
