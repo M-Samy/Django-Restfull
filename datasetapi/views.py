@@ -5,6 +5,7 @@ from .serializers import DataSerializer
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from datetime import datetime
+import datetime as dt
 
 
 class Dataset(APIView):
@@ -13,8 +14,8 @@ class Dataset(APIView):
             paginator = PageNumberPagination()
             paginator.page_size = 100
             query_param = self.request.query_params.get('q', None)
-            from_date = self.request.query_params.get('from_date', None)
-            to_date = self.request.query_params.get('to_date', None)
+            from_date = self.request.query_params.get('from_date', dt.date.today())
+            to_date = self.request.query_params.get('to_date', from_date)
             order_field = self.request.query_params.get('order', None)
             order_type = self.request.query_params.get('type', 'ASC')
             returned_fields = self.request.query_params.get('fields', None)
@@ -39,7 +40,7 @@ class Dataset(APIView):
             return paginator.get_paginated_response(serializer.data)
         except Exception as e:
             print(e)
-            raise Http404('Requested is failed with error {}'.format(e.__repr__))
+            raise Http404('Requested is failed with error {}'.format(e.__doc__))
 
     def get_data_within_a_daterange(self, from_date, to_date, data):
         try:
@@ -49,7 +50,7 @@ class Dataset(APIView):
                 data = data.filter(date__range=[from_date, to_date])
             return data
         except Exception as e:
-            raise Http404('Failed filter data within a range of dates {}'.format(e.__repr__))
+            raise Http404('Failed filter data within a range of dates {}'.format(e.__doc__))
 
     def get_data_ordered(self, order_field, order_type, data):
         try:
@@ -62,7 +63,7 @@ class Dataset(APIView):
 
             return data
         except Exception as e:
-            raise Http404('Failed ordering data by {} due to {}'.format(order_field, e.__repr__))
+            raise Http404('Failed ordering data by {} due to {}'.format(order_field, e.__doc__))
 
     def handle_returned_fields(self, returned_fields, data, serializer):
         try:
