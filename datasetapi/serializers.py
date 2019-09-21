@@ -1,5 +1,5 @@
-from .models import Dataset
 from rest_framework.serializers import ModelSerializer
+from .models import Dataset
 
 
 # Serializers define the API representation.

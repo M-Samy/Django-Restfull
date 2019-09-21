@@ -11,28 +11,32 @@ class Dataset(APIView):
     def get(self, request):
         try:
             paginator = PageNumberPagination()
-            paginator.page_size = 100            
-            dataset = DatasetModel.objects.all()
+            paginator.page_size = 100
             query_param = self.request.query_params.get('q', None)
             from_date = self.request.query_params.get('from_date', None)
             to_date = self.request.query_params.get('to_date', None)
             order_field = self.request.query_params.get('order', None)
             order_type = self.request.query_params.get('type', 'ASC')
+            returned_fields = self.request.query_params.get('fields', None)
+            group_fields = self.request.query_params.get('group_fields', None)
 
             if query_param:
-                dataset = dataset.filter(
+                dataset = DatasetModel.objects.filter(
                     Q(channel__icontains = query_param) |
                     Q(country__icontains = query_param) |
                     Q(os__icontains = query_param)
                     )
-
+            else:
+                dataset = DatasetModel.objects.all()
+            data_serializer = DataSerializer()
+            self.handle_returned_fields(returned_fields, dataset, data_serializer)
             dataset = self.get_data_within_a_daterange(from_date, to_date, dataset)
             dataset = self.get_data_ordered(order_field, order_type, dataset)
-
             result_page = paginator.paginate_queryset(dataset, request)
             serializer = DataSerializer(result_page, many=True)
             return paginator.get_paginated_response(serializer.data)
         except Exception as e:
+            print(e)
             raise Http404('Requested is failed with error {}'.format(e.__repr__))
 
     def get_data_within_a_daterange(self, from_date, to_date, data):
@@ -57,3 +61,12 @@ class Dataset(APIView):
             return data
         except Exception as e:
             raise Http404('Failed ordering data by {} due to {}'.format(order_field, e.__repr__))
+
+    def handle_returned_fields(self, returned_fields, data, serializer):
+        model_fields = DatasetModel._meta.ordering
+        fields_list = [field.strip() for field in returned_fields.split(',')]
+        # Check if all returned fields client send is a real fields in Dataset Model.
+        if all(elem.strip() in model_fields for elem in fields_list):
+            serializer.Meta.fields = fields_list
+        else:
+            pass
