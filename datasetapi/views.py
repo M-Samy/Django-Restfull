@@ -6,6 +6,8 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from datetime import datetime
 import datetime as dt
+from rest_framework.response import Response
+from django.db.models import Sum
 
 
 class Dataset(APIView):
@@ -14,12 +16,13 @@ class Dataset(APIView):
             paginator = PageNumberPagination()
             paginator.page_size = 100
             query_param = self.request.query_params.get('q', None)
-            from_date = self.request.query_params.get('from_date', dt.date.today())
+            from_date = self.request.query_params.get('from_date', dt.date.today().strftime("%Y-%m-%d"))
             to_date = self.request.query_params.get('to_date', from_date)
             order_field = self.request.query_params.get('order', None)
             order_type = self.request.query_params.get('type', 'ASC')
             returned_fields = self.request.query_params.get('fields', None)
             group_fields = self.request.query_params.get('group_fields', None)
+            cpi = self.request.query_params.get('cpi', 0)
 
             if query_param:
                 dataset = DatasetModel.objects.filter(
@@ -29,15 +32,19 @@ class Dataset(APIView):
                     )
             else:
                 dataset = DatasetModel.objects.all()
+
             data_serializer = DataSerializer()
             self.handle_returned_fields(returned_fields, dataset, data_serializer)
             dataset = self.get_data_within_a_daterange(from_date, to_date, dataset)
-
             dataset = self.get_data_ordered(order_field, order_type, dataset)
+            cpi_value = self.handle_cpi_value(cpi, dataset)
 
             result_page = paginator.paginate_queryset(dataset, request)
+
             serializer = DataSerializer(result_page, many=True)
-            return paginator.get_paginated_response(serializer.data)
+            data = paginator.get_paginated_response(serializer.data)
+            res = {'res': data.data, 'total_cpi': cpi_value}
+            return Response(res)
         except Exception as e:
             print(e)
             raise Http404('Requested is failed with error {}'.format(e.__doc__))
@@ -79,3 +86,13 @@ class Dataset(APIView):
                 pass
         except Exception as e:
             raise Http404('Failed to get fields client want to back in response due to {}'.format(e.__doc__))
+
+    def handle_cpi_value(self, cpi, dataset):
+        try:
+            cpi_value=None
+            if int(cpi):
+                cpi = dataset.aggregate(num_installs=Sum('installs'), num_spend=Sum('spend'))
+                cpi_value = cpi['num_spend'] / cpi['num_installs']
+            return cpi_value
+        except Exception as e:
+            raise Http404('Failed to get cpi due to {}'.format(e.__doc__))

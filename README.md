@@ -16,9 +16,11 @@ A simple app in python3 and django connect to Mysql DB.
 	- Mysql
 
 # Table of enhancements
-	- Dockerize the project "This was out of our scope"
-	- Authentization through requests "This was out of our scope"
-	- Adding more functionality "This was out of our scope"
+	- Dockerize the project
+	- Unit testing
+	- Authentization through requests
+	- Adding more functionality
+	- Validation
 	- Using django-filters more than used
 	- Apply more secuity checks 
 	- Apply some middlewares, decorators and other layers for security or functionality "This was out of our scope"
