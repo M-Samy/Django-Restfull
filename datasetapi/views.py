@@ -39,11 +39,14 @@ class Dataset(APIView):
             dataset = self.get_data_ordered(order_field, order_type, dataset)
             cpi_value = self.handle_cpi_value(cpi, dataset)
 
+            # Only aggregated by Impressions and Clicks as test case.
+            aggs = self.get_aggregated_values(group_fields, dataset)
+
             result_page = paginator.paginate_queryset(dataset, request)
 
             serializer = DataSerializer(result_page, many=True)
             data = paginator.get_paginated_response(serializer.data)
-            res = {'res': data.data, 'total_cpi': cpi_value}
+            res = {'res': data.data, 'total_cpi': cpi_value, 'aggregations': aggs}
             return Response(res)
         except Exception as e:
             print(e)
@@ -96,3 +99,16 @@ class Dataset(APIView):
             return cpi_value
         except Exception as e:
             raise Http404('Failed to get cpi due to {}'.format(e.__doc__))
+
+    def get_aggregated_values(self, group_fields, dataset):
+        try:
+            model_fields = DatasetModel._meta.ordering
+            aggs = None
+            if group_fields:
+                fields_list = [field.strip() for field in group_fields.split(',')]
+                # Check if all returned fields client send is a real fields in Dataset Model.
+                if all(elem.strip() in model_fields for elem in fields_list):
+                    aggs = dataset.aggregate(sum_impressions=Sum("impressions"), sum_clicks=Sum("clicks"))
+            return aggs
+        except Exception as e:
+            raise Http404('Failed to get aggregated values due to {}'.format(e.__doc__))
